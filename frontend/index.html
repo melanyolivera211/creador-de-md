@@ -803,7 +803,7 @@
       <button class="btn-download" id="btn-download" onclick="downloadMarkdown()">
         ⬇️ Descargar .md
       </button>
-      <button class="btn-send" id="btn-send" onclick="sendToAgent()">
+      <button class="btn-send" id="btn-send" onclick="sendToAgent()" style="display: none;">
         🧠 Enviar a MI-AGENTE
       </button>
       <button class="btn-new-url" onclick="resetToInitial()">
@@ -1421,9 +1421,11 @@ $('url-input').addEventListener('keydown', e => {
     if (!d.gemini_configured) {
       setNavStatus('⚠️ Sin API Key', '248,113,113');
     }
-    // Check MI-AGENTE
-    if (d.mi_agente && !d.mi_agente.available) {
-      $('btn-send').title = 'MI-AGENTE no encontrado: ' + (d.mi_agente.error || '');
+    // Check MI-AGENTE: mostrar el botón solo si está disponible (entorno local)
+    if (d.mi_agente && d.mi_agente.available) {
+      $('btn-send').style.display = '';
+    } else {
+      $('btn-send').style.display = 'none';
     }
   } catch (e) { /* server not ready yet */ }
 })();
