@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agente-Scapper — Extractor de Conocimiento Técnico</title>
+  <meta name="description" content="Convierte documentación de librerías en conocimiento práctico reutilizable con casos de uso reales y scripts minimalistas." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ══════════════════════════════════════════════════
+       DESIGN SYSTEM — NEON PINK / MAGENTA CYBER DARK
+    ══════════════════════════════════════════════════ */
+    :root {
+      --bg:             #0a0e1a;
+      --surface:        rgba(14, 20, 36, 0.7);
+      --surface2:       #12192c;
+      --surface3:       #1a243d;
+      --border:         rgba(236, 72, 153, 0.18);
+      --border2:        #202d4a;
+      --accent:         #f472b6;   /* Rosa principal */
+      --accent-intense: #ec4899;   /* Rosa intenso */
+      --accent-fuchsia: #d946ef;   /* Fucsia / Magenta */
+      --accent-light:   #f9a8d4;   /* Rosa claro */
+      --accent-soft:    #fbcfe8;   /* Rosa suave */
+      --accent-dim:     rgba(236, 72, 153, 0.12);
+      --accent2:        #f472b6;   /* Acento secundario */
+      --accent2-dim:    rgba(236, 72, 153, 0.15);
+      --accent3:        #d946ef;   /* Fucsia / Magenta */
+      --text:           #e2e8f4;
+      --text-muted:     #94a3b8;
+      --text-dim:       #64748b;
+      --code-bg:        #070a12;
+      --code-border:    rgba(236, 72, 153, 0.2);
+      --danger:         #f87171;
+      --success:        #ec4899;
+      --radius:         14px;
+      --radius-sm:      8px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+
+    body {
+      font-family: 'Inter', -apple-system, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--surface2); }
+    ::-webkit-scrollbar-thumb { background: rgba(236, 72, 153, 0.3); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+    /* ══════════════════════════════════════════════════
+       LAYOUT
+    ══════════════════════════════════════════════════ */
+    .nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10, 14, 26, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 28px;
+      display: flex; align-items: center; gap: 20px;
+    }
+    .nav-brand {
+      font-weight: 800; font-size: 1rem; letter-spacing: -.3px;
+      color: var(--accent); text-decoration: none; margin-right: auto;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .nav-brand .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent-intense);
+      box-shadow: 0 0 10px var(--accent-intense), 0 0 20px rgba(236, 72, 153, 0.5);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .nav a { color: var(--text-muted); text-decoration: none; font-size: .88rem;
+      transition: color .2s; }
+    .nav a:hover { color: var(--accent); }
+    .badge-nav {
+      background: rgba(236, 72, 153, 0.12); color: var(--accent-light); font-size: .72rem;
+      font-weight: 600; padding: 4px 10px; border-radius: 20px;
+      border: 1px solid rgba(236, 72, 153, 0.35);
+      box-shadow: 0 0 10px rgba(236, 72, 153, 0.15);
+    }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 0 20px 80px; }
+
+    /* ══════════════════════════════════════════════════
+       HERO / INITIAL STATE
+    ══════════════════════════════════════════════════ */
+    #hero {
+      padding: 64px 0 32px;
+      text-align: center;
+    }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(236, 72, 153, 0.08); border: 1px solid rgba(236, 72, 153, 0.25);
+      border-radius: 20px; padding: 6px 14px; font-size: .82rem;
+      color: var(--accent-light); font-weight: 600; margin-bottom: 20px;
+      letter-spacing: .5px;
+      box-shadow: 0 0 15px rgba(236, 72, 153, 0.15);
+    }
+    .hero-title {
+      font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 800;
+      line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 16px;
+    }
+    .hero-title .grad {
+      background: linear-gradient(135deg, #f472b6 0%, #ec4899 50%, #d946ef 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 20px rgba(236, 72, 153, 0.35));
+    }
+    .hero-sub {
+      color: var(--text-muted); max-width: 580px; margin: 0 auto 36px;
+      font-size: 1.05rem; line-height: 1.7;
+    }
+
+    /* ── Search Box ── */
+    .search-box {
+      display: flex; gap: 10px; max-width: 680px; margin: 0 auto 12px;
+    }
+    .search-input {
+      flex: 1;
+      background: var(--surface2); border: 1.5px solid var(--border2);
+      color: var(--text); font-family: 'Inter', sans-serif; font-size: .97rem;
+      padding: 14px 18px; border-radius: var(--radius);
+      outline: none; transition: border-color .2s, box-shadow .2s;
+    }
+    .search-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.18), 0 0 20px rgba(236, 72, 153, 0.25);
+    }
+    .search-input::placeholder { color: var(--text-dim); }
+    .btn-primary {
+      background: linear-gradient(135deg, #ec4899 0%, #d946ef 100%);
+      color: #ffffff;
+      font-weight: 700; font-size: .95rem; font-family: 'Inter', sans-serif;
+      border: none; border-radius: var(--radius);
+      padding: 14px 26px; cursor: pointer;
+      transition: all .25s ease; white-space: nowrap;
+      display: flex; align-items: center; gap: 8px;
+      box-shadow: 0 0 25px rgba(236, 72, 153, 0.35);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, #f472b6 0%, #ec4899 100%);
+      box-shadow: 0 0 35px rgba(236, 72, 153, 0.55), 0 4px 20px rgba(217, 70, 239, 0.4);
+      transform: translateY(-1px);
+    }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+    .search-hint { color: var(--text-dim); font-size: .82rem; text-align: center; }
+    .search-hint code { color: var(--accent-light); background: var(--surface2);
+      padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; }
+
+    /* ══════════════════════════════════════════════════
+       PIPELINE GRAPH (SVG animado)
+    ══════════════════════════════════════════════════ */
+    .graph-wrap {
+      background: rgba(14, 20, 36, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(236, 72, 153, 0.18);
+      box-shadow: 0 0 30px rgba(236, 72, 153, 0.08);
+      border-radius: var(--radius); padding: 24px 20px; margin: 40px 0 0;
+    }
+    .graph-title {
+      text-align: center; color: var(--accent-light); font-size: .82rem;
+      font-weight: 600; letter-spacing: .8px; text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+    #pipeline-svg { width: 100%; height: auto; display: block; }
+    .graph-caption {
+      text-align: center; color: var(--text-dim); font-size: .8rem;
+      margin-top: 12px; min-height: 1.4em;
+    }
+    .graph-caption b { color: var(--accent); text-shadow: 0 0 10px rgba(236, 72, 153, 0.5); }
+
+    /* ══════════════════════════════════════════════════
+       PROGRESS STATE
+    ══════════════════════════════════════════════════ */
+    #progress-section { display: none; padding: 40px 0; }
+    .progress-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 24px; color: var(--text); }
+    .progress-bar-wrap {
+      background: var(--surface2); border-radius: 100px;
+      height: 6px; overflow: hidden; margin-bottom: 24px;
+      box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+    }
+    .progress-bar {
+      height: 100%; border-radius: 100px; transition: width .4s ease;
+      background: linear-gradient(90deg, #ec4899, #d946ef, #f472b6);
+      box-shadow: 0 0 15px rgba(236, 72, 153, 0.5);
+      width: 0%;
+    }
+    .progress-steps { display: flex; flex-direction: column; gap: 10px; }
+    .step-item {
+      display: flex; align-items: center; gap: 12px;
+      color: var(--text-muted); font-size: .9rem;
+      transition: color .3s;
+    }
+    .step-item.active { color: var(--text); }
+    .step-item.done { color: var(--accent); }
+    .step-icon {
+      width: 22px; height: 22px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; flex-shrink: 0;
+      background: var(--surface3); border: 1.5px solid var(--border2);
+      transition: all .3s;
+    }
+    .step-item.active .step-icon {
+      border-color: #d946ef; background: rgba(217, 70, 239, 0.15);
+      color: #f472b6;
+      box-shadow: 0 0 10px rgba(217, 70, 239, 0.4);
+      animation: spin-soft 1.2s linear infinite;
+    }
+    .step-item.done .step-icon {
+      border-color: #ec4899; background: rgba(236, 72, 153, 0.15);
+      color: #f472b6;
+      box-shadow: 0 0 10px rgba(236, 72, 153, 0.35);
+    }
+    @keyframes spin-soft { 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }
+
+    /* ══════════════════════════════════════════════════
+       RESULT STATE
+    ══════════════════════════════════════════════════ */
+    #result-section { display: none; padding-top: 8px; }
+    .result-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 0 0;
+      margin-bottom: -16px;
+    }
+    .btn-top-new {
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      color: var(--text-muted);
+      font-size: .85rem;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all .2s;
+    }
+    .btn-top-new:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(236, 72, 153, 0.08);
+      box-shadow: 0 0 15px rgba(236, 72, 153, 0.2);
+      transform: translateX(-2px);
+    }
+    .result-badge-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(236, 72, 153, 0.08);
+      border: 1px solid rgba(236, 72, 153, 0.25);
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-size: .78rem;
+      color: var(--accent);
+      font-weight: 600;
+      box-shadow: 0 0 12px rgba(236, 72, 153, 0.15);
+    }
+    .result-badge-indicator .live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-intense);
+      box-shadow: 0 0 8px var(--accent-intense);
+    }
+    .result-header {
+      background: linear-gradient(135deg, rgba(14, 20, 36, 0.85) 0%, rgba(21, 29, 51, 0.85) 100%);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(236, 72, 153, 0.2);
+      box-shadow: 0 0 30px rgba(236, 72, 153, 0.08);
+      border-radius: var(--radius);
+      padding: 32px; margin: 32px 0 24px;
+    }
+    .lib-name {
+      font-size: 2rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px;
+      background: linear-gradient(135deg, #ffffff 0%, #f9a8d4 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .lib-url { color: var(--text-muted); font-size: .85rem; margin-bottom: 16px; }
+    .lib-url a { color: var(--accent); text-decoration: none; }
+    .lib-url a:hover { text-decoration: underline; color: var(--accent-light); }
+    .lib-desc { color: var(--text-muted); line-height: 1.7; margin-bottom: 20px; }
+    .stats-row { display: flex; gap: 16px; flex-wrap: wrap; }
+    .stat-chip {
+      background: var(--surface3); border: 1px solid rgba(236, 72, 153, 0.18);
+      border-radius: 8px; padding: 8px 14px;
+      font-size: .82rem; color: var(--text-muted);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .stat-chip b { color: var(--accent-light); }
+
+    /* ── Section headings ── */
+    .section-heading {
+      font-size: 1.2rem; font-weight: 700; color: var(--accent);
+      margin: 36px 0 16px; display: flex; align-items: center; gap: 10px;
+      text-shadow: 0 0 15px rgba(236, 72, 153, 0.3);
+    }
+    .section-heading::after {
+      content: ''; flex: 1; height: 1px;
+      background: linear-gradient(90deg, rgba(236, 72, 153, 0.3), transparent);
+    }
+
+    /* ── Install block ── */
+    .install-block {
+      background: var(--code-bg); border: 1px solid rgba(236, 72, 153, 0.2);
+      border-radius: var(--radius-sm); padding: 16px 20px;
+      display: flex; align-items: center; gap: 12px;
+      font-family: 'JetBrains Mono', monospace; font-size: .88rem;
+    }
+    .install-block .dollar { color: var(--accent-intense); text-shadow: 0 0 8px rgba(236, 72, 153, 0.4); }
+
+    /* ── Concept pills ── */
+    .pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .pill {
+      background: var(--surface3); border: 1px solid rgba(236, 72, 153, 0.18);
+      border-radius: 20px; padding: 5px 12px; font-size: .8rem; color: var(--text-muted);
+    }
+
+    /* ── API chips ── */
+    .api-chip {
+      background: rgba(236, 72, 153, 0.08); border: 1px solid rgba(236, 72, 153, 0.25);
+      color: var(--accent); border-radius: 6px; padding: 4px 10px;
+      font-size: .78rem; font-family: 'JetBrains Mono', monospace;
+      display: inline-block;
+      transition: all .2s;
+    }
+    .api-chip:hover {
+      border-color: rgba(236, 72, 153, 0.5);
+      box-shadow: 0 0 12px rgba(236, 72, 153, 0.2);
+    }
+
+    /* ══════════════════════════════════════════════════
+       USE CASE CARDS
+    ══════════════════════════════════════════════════ */
+    .use-cases-grid { display: flex; flex-direction: column; gap: 24px; }
+    .use-case-card {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(236, 72, 153, 0.18);
+      border-radius: var(--radius); overflow: hidden;
+      transition: border-color .25s, box-shadow .25s, transform .25s;
+    }
+    .use-case-card:hover {
+      border-color: rgba(236, 72, 153, 0.45);
+      box-shadow: 0 0 25px rgba(236, 72, 153, 0.18), 0 8px 32px rgba(0, 0, 0, 0.35);
+      transform: translateY(-2px);
+    }
+    .card-header {
+      background: var(--surface2); border-bottom: 1px solid var(--border);
+      padding: 20px 24px; display: flex; align-items: flex-start; gap: 14px;
+    }
+    .case-number {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(217, 70, 239, 0.2));
+      border: 1.5px solid var(--accent); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: .88rem; color: #ffffff;
+      box-shadow: 0 0 12px rgba(236, 72, 153, 0.3);
+    }
+    .card-header-content h3 {
+      font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; color: var(--text);
+    }
+    .card-header-content .objective {
+      color: var(--text-muted); font-size: .88rem;
+    }
+    .card-body { padding: 24px; }
+    .field-label {
+      font-size: .75rem; font-weight: 600; letter-spacing: .8px;
+      text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px;
+    }
+    .field-value { color: var(--text-muted); font-size: .92rem; margin-bottom: 18px; line-height: 1.65; }
+    .field-value:last-child { margin-bottom: 0; }
+
+    /* ── Code block ── */
+    .code-wrap {
+      background: var(--code-bg); border: 1px solid rgba(236, 72, 153, 0.18);
+      border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 16px;
+    }
+    .code-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px; background: var(--surface3);
+      border-bottom: 1px solid var(--code-border);
+    }
+    .code-lang {
+      font-size: .75rem; font-weight: 600; letter-spacing: .5px;
+      text-transform: uppercase; color: var(--accent-light);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .btn-copy {
+      background: var(--surface2); border: 1px solid var(--border2);
+      color: var(--text-muted); font-size: .78rem; font-family: 'Inter', sans-serif;
+      padding: 4px 10px; border-radius: 6px; cursor: pointer;
+      transition: all .2s; display: flex; align-items: center; gap: 5px;
+    }
+    .btn-copy:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(236, 72, 153, 0.2); }
+    .btn-copy.copied { border-color: var(--accent-intense); color: var(--accent-intense); background: rgba(236, 72, 153, 0.1); }
+    code, pre {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+    pre {
+      padding: 18px 20px; overflow-x: auto;
+      font-size: .83rem; line-height: 1.7;
+      color: #b0c4de; white-space: pre; tab-size: 2;
+    }
+
+    /* Syntax highlight neón */
+    .tok-kw  { color: #c792ea; }
+    .tok-str { color: #f9a8d4; }
+    .tok-cm  { color: #64748b; font-style: italic; }
+    .tok-fn  { color: #82aaff; }
+    .tok-num { color: #f78c6c; }
+    .tok-op  { color: #89ddff; }
+    .tok-cls { color: #ffcb6b; }
+
+    /* ── Evidence row ── */
+    .evidence-list { display: flex; flex-direction: column; gap: 6px; }
+    .evidence-item {
+      display: flex; align-items: center; gap: 8px;
+      font-size: .8rem; color: var(--text-muted);
+    }
+    .evidence-item a { color: var(--accent); text-decoration: none; word-break: break-all; }
+    .evidence-item a:hover { text-decoration: underline; color: var(--accent-light); }
+    .ev-api {
+      background: rgba(236, 72, 153, 0.1); border: 1px solid rgba(236, 72, 153, 0.2);
+      border-radius: 4px;
+      padding: 1px 6px; font-family: 'JetBrains Mono', monospace; font-size: .75rem;
+      color: var(--accent-light); flex-shrink: 0;
+    }
+
+    /* ── Deps & Execution ── */
+    .inline-code {
+      background: rgba(236, 72, 153, 0.08); border: 1px solid rgba(236, 72, 153, 0.18);
+      border-radius: 4px;
+      padding: 2px 8px; font-family: 'JetBrains Mono', monospace;
+      font-size: .83rem; color: var(--accent-light);
+    }
+
+    /* ══════════════════════════════════════════════════
+       MARKDOWN VIEWER
+    ══════════════════════════════════════════════════ */
+    .md-section { margin-top: 40px; }
+    .md-toggle-btn {
+      background: var(--surface2); border: 1px solid var(--border2);
+      color: var(--text-muted); font-family: 'Inter', sans-serif; font-size: .9rem;
+      padding: 12px 20px; border-radius: var(--radius-sm); cursor: pointer;
+      display: flex; align-items: center; gap: 8px; transition: all .2s;
+      width: 100%;
+    }
+    .md-toggle-btn:hover { border-color: var(--accent); color: var(--text); box-shadow: 0 0 15px rgba(236, 72, 153, 0.15); }
+    .md-toggle-btn .arrow { transition: transform .3s; }
+    .md-viewer {
+      display: none;
+      background: var(--code-bg); border: 1px solid var(--code-border);
+      border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+      border-top: none; padding: 20px;
+      font-family: 'JetBrains Mono', monospace; font-size: .8rem;
+      line-height: 1.7; color: #a4b3cf;
+      white-space: pre-wrap; word-break: break-word;
+      max-height: 500px; overflow-y: auto;
+    }
+    .md-viewer.open { display: block; }
+
+    /* ══════════════════════════════════════════════════
+       ACTION BUTTONS
+    ══════════════════════════════════════════════════ */
+    .actions-row {
+      display: flex; gap: 14px; flex-wrap: wrap;
+      margin-top: 32px; padding: 24px;
+      background: rgba(14, 20, 36, 0.75); backdrop-filter: blur(12px);
+      border: 1px solid rgba(236, 72, 153, 0.18);
+      box-shadow: 0 0 30px rgba(236, 72, 153, 0.08);
+      border-radius: var(--radius);
+    }
+    .btn-download {
+      background: linear-gradient(135deg, #ec4899 0%, #d946ef 100%);
+      color: #ffffff;
+      font-weight: 700; font-family: 'Inter', sans-serif; font-size: .95rem;
+      border: none; border-radius: var(--radius-sm); padding: 13px 24px;
+      cursor: pointer; transition: all .25s ease;
+      display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center;
+      box-shadow: 0 0 20px rgba(236, 72, 153, 0.35);
+    }
+    .btn-download:hover {
+      background: linear-gradient(135deg, #f472b6 0%, #ec4899 100%);
+      box-shadow: 0 0 30px rgba(236, 72, 153, 0.55), 0 4px 20px rgba(217, 70, 239, 0.4);
+      transform: translateY(-1px);
+    }
+    .btn-send {
+      background: rgba(217, 70, 239, 0.1); color: var(--accent-light);
+      font-weight: 700; font-family: 'Inter', sans-serif; font-size: .95rem;
+      border: 1.5px solid #d946ef; border-radius: var(--radius-sm);
+      padding: 13px 24px; cursor: pointer; transition: all .25s ease;
+      display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center;
+      box-shadow: 0 0 15px rgba(217, 70, 239, 0.2);
+    }
+    .btn-send:hover:not(:disabled) {
+      background: rgba(217, 70, 239, 0.2);
+      border-color: #f472b6; color: #ffffff;
+      box-shadow: 0 0 25px rgba(217, 70, 239, 0.45);
+      transform: translateY(-1px);
+    }
+    .btn-send:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-new-url {
+      background: transparent; color: var(--text-muted);
+      font-weight: 600; font-family: 'Inter', sans-serif; font-size: .9rem;
+      border: 1px solid var(--border2); border-radius: var(--radius-sm);
+      padding: 13px 24px; cursor: pointer; transition: all .2s;
+      display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center;
+    }
+    .btn-new-url:hover {
+      border-color: var(--accent); color: var(--accent);
+      background: rgba(236, 72, 153, 0.08);
+      box-shadow: 0 0 15px rgba(236, 72, 153, 0.2);
+    }
+
+    .send-status {
+      font-size: .85rem; padding: 10px 16px; border-radius: var(--radius-sm);
+      margin-top: 10px; display: none;
+    }
+    .send-status.success {
+      background: rgba(236, 72, 153, 0.12);
+      border: 1px solid var(--accent);
+      color: var(--accent-light);
+      box-shadow: 0 0 20px rgba(236, 72, 153, 0.25);
+    }
+    .send-status.error {
+      background: rgba(248, 113, 113, 0.1);
+      border: 1px solid var(--danger);
+      color: var(--danger);
+    }
+
+    /* ══════════════════════════════════════════════════
+       ERROR STATE
+    ══════════════════════════════════════════════════ */
+    #error-section {
+      display: none; padding: 40px 0;
+    }
+    .error-card {
+      background: rgba(248, 113, 113, 0.06); border: 1px solid rgba(248, 113, 113, 0.3);
+      border-radius: var(--radius); padding: 28px;
+    }
+    .error-icon { font-size: 2rem; margin-bottom: 12px; }
+    .error-title { font-size: 1.2rem; font-weight: 700; color: var(--danger); margin-bottom: 8px; }
+    .error-msg { color: var(--text-muted); line-height: 1.7; white-space: pre-wrap; }
+    .btn-retry {
+      margin-top: 16px; background: var(--surface3); border: 1px solid var(--border2);
+      color: var(--text-muted); font-family: 'Inter', sans-serif; font-size: .88rem;
+      padding: 10px 18px; border-radius: var(--radius-sm); cursor: pointer;
+      transition: all .2s;
+    }
+    .btn-retry:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* ══════════════════════════════════════════════════
+       FOOTER
+    ══════════════════════════════════════════════════ */
+    footer {
+      border-top: 1px solid var(--border); padding: 24px;
+      text-align: center; color: var(--text-dim); font-size: .82rem;
+    }
+    footer b { color: var(--accent-light); }
+
+    /* ══════════════════════════════════════════════════
+       RESPONSIVE
+    ══════════════════════════════════════════════════ */
+    @media (max-width: 640px) {
+      .search-box { flex-direction: column; }
+      .actions-row { flex-direction: column; }
+      .stats-row { flex-direction: column; }
+      .hero-title { font-size: 1.8rem; }
+      .nav { padding: 12px 16px; }
+      .container { padding: 0 14px 60px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+     NAV
+════════════════════════════════════════════ -->
+<nav class="nav">
+  <a class="nav-brand" href="javascript:void(0)" onclick="resetToInitial()">
+    <span class="dot"></span>
+    Agente-Scapper
+  </a>
+  <a href="javascript:void(0)" onclick="resetToInitial()" id="nav-link-home">Inicio</a>
+  <a href="#result-section" id="nav-link-result" style="display: none;">Resultado</a>
+  <span class="badge-nav" id="nav-status">Listo</span>
+</nav>
+
+<!-- ════════════════════════════════════════════
+     HERO / INITIAL
+════════════════════════════════════════════ -->
+<div class="container">
+  <section id="hero">
+    <div class="hero-eyebrow">
+      ⚡ Documentación → Conocimiento
+    </div>
+    <h1 class="hero-title">
+      Convierte <span class="grad">documentación</span><br/>
+      en conocimiento reutilizable
+    </h1>
+    <p class="hero-sub">
+      Introduce la URL de una librería. El sistema analiza con IA y genera <strong>mínimo 3 casos de uso</strong> con scripts minimalistas
+      listos para tu <strong>Grafo de Conocimiento</strong>.
+    </p>
+
+    <div class="search-box">
+      <input
+        type="url"
+        id="url-input"
+        class="search-input"
+        placeholder="https://docs.ollama.com/"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button class="btn-primary" id="analyze-btn" onclick="startAnalysis()">
+        <span id="btn-icon">▶</span>
+        <span id="btn-text">Analizar</span>
+      </button>
+    </div>
+    <p class="search-hint">
+      Ejemplos: <code>https://docs.ollama.com/</code> &nbsp;|&nbsp; <code>https://docs.python-requests.org/</code>
+    </p>
+
+    <!-- Pipeline graph -->
+    <div class="graph-wrap" id="pipeline-graph">
+      <div class="graph-title">📡 Pipeline de transformación</div>
+      <svg id="pipeline-svg" viewBox="0 0 860 200" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,1 L0,9 L9,5 Z" fill="#202d4a" id="arrow-fill"/>
+          </marker>
+          <marker id="arrow-active" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,1 L0,9 L9,5 Z" fill="#ec4899"/>
+          </marker>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#ec4899" flood-opacity="0.9"/>
+          </filter>
+        </defs>
+
+        <!-- Edges -->
+        <g id="edges">
+          <line class="edge" id="e0" x1="72" y1="100" x2="154" y2="100" stroke="#202d4a" stroke-width="2" marker-end="url(#arrow)"/>
+          <line class="edge" id="e1" x1="238" y1="100" x2="318" y2="100" stroke="#202d4a" stroke-width="2" marker-end="url(#arrow)"/>
+          <line class="edge" id="e2" x1="402" y1="100" x2="480" y2="100" stroke="#202d4a" stroke-width="2" marker-end="url(#arrow)"/>
+          <line class="edge" id="e3" x1="566" y1="100" x2="644" y2="100" stroke="#202d4a" stroke-width="2" marker-end="url(#arrow)"/>
+          <line class="edge" id="e4" x1="728" y1="100" x2="796" y2="100" stroke="#202d4a" stroke-width="2" marker-end="url(#arrow)"/>
+        </g>
+
+        <!-- Nodes -->
+        <g id="nodes">
+          <!-- Node 0: URL -->
+          <g class="node" id="n0">
+            <rect x="4" y="72" width="68" height="56" rx="10" ry="10" fill="#12192c" stroke="#202d4a" stroke-width="1.5"/>
+            <text x="38" y="94" text-anchor="middle" fill="#94a3b8" font-size="18">🔗</text>
+            <text x="38" y="114" text-anchor="middle" fill="#e2e8f4" font-size="10" font-weight="600">URL</text>
+          </g>
+          <!-- Node 1: Scraping -->
+          <g class="node" id="n1">
+            <rect x="158" y="66" width="80" height="68" rx="10" ry="10" fill="#12192c" stroke="#202d4a" stroke-width="1.5"/>
+            <text x="198" y="92" text-anchor="middle" fill="#94a3b8" font-size="18">🕷️</text>
+            <text x="198" y="110" text-anchor="middle" fill="#e2e8f4" font-size="10" font-weight="600">Scraping</text>
+            <text x="198" y="124" text-anchor="middle" fill="#64748b" font-size="9">controlado</text>
+          </g>
+          <!-- Node 2: Extracción -->
+          <g class="node" id="n2">
+            <rect x="322" y="66" width="80" height="68" rx="10" ry="10" fill="#12192c" stroke="#202d4a" stroke-width="1.5"/>
+            <text x="362" y="92" text-anchor="middle" fill="#94a3b8" font-size="18">🔍</text>
+            <text x="362" y="110" text-anchor="middle" fill="#e2e8f4" font-size="10" font-weight="600">Extracción</text>
+            <text x="362" y="124" text-anchor="middle" fill="#64748b" font-size="9">código + APIs</text>
+          </g>
+          <!-- Node 3: IA -->
+          <g class="node" id="n3">
+            <rect x="484" y="66" width="82" height="68" rx="10" ry="10" fill="#12192c" stroke="#202d4a" stroke-width="1.5"/>
+            <text x="525" y="92" text-anchor="middle" fill="#94a3b8" font-size="18">🤖</text>
+            <text x="525" y="110" text-anchor="middle" fill="#e2e8f4" font-size="10" font-weight="600">Análisis IA</text>
+            <text x="525" y="124" text-anchor="middle" fill="#64748b" font-size="9">Gemini</text>
+          </g>
+          <!-- Node 4: Cases -->
+          <g class="node" id="n4">
+            <rect x="648" y="62" width="80" height="76" rx="10" ry="10" fill="#12192c" stroke="#202d4a" stroke-width="1.5"/>
+            <text x="688" y="88" text-anchor="middle" fill="#94a3b8" font-size="18">💡</text>
+            <text x="688" y="106" text-anchor="middle" fill="#e2e8f4" font-size="10" font-weight="600">Casos de Uso</text>
+            <text x="688" y="120" text-anchor="middle" fill="#64748b" font-size="9">+ scripts</text>
+            <text x="688" y="132" text-anchor="middle" fill="#64748b" font-size="9">mínimos</text>
+          </g>
+          <!-- Node 5: MI-AGENTE -->
+          <g class="node" id="n5">
+            <rect x="800" y="66" width="56" height="68" rx="10" ry="10" fill="#12192c" stroke="#202d4a" stroke-width="1.5"/>
+            <text x="828" y="92" text-anchor="middle" fill="#94a3b8" font-size="16">🧠</text>
+            <text x="828" y="108" text-anchor="middle" fill="#e2e8f4" font-size="9" font-weight="600">MI</text>
+            <text x="828" y="120" text-anchor="middle" fill="#e2e8f4" font-size="9" font-weight="600">AGENTE</text>
+          </g>
+        </g>
+
+        <!-- Traveler particle con glow rosa neón -->
+        <circle id="traveler" r="5" fill="#f472b6" filter="url(#glow)" opacity="0"/>
+      </svg>
+      <div class="graph-caption" id="graph-caption">Introduce una URL para comenzar</div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════
+       PROGRESS
+  ════════════════════════════════════════════ -->
+  <section id="progress-section">
+    <div class="progress-title">⚙️ Procesando documentación...</div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+    <div class="progress-steps" id="progress-steps">
+      <div class="step-item" id="step-validating">
+        <div class="step-icon">🔗</div>
+        <span>Validando URL</span>
+      </div>
+      <div class="step-item" id="step-scraping">
+        <div class="step-icon">🕷️</div>
+        <span id="step-scraping-text">Scraping de documentación</span>
+      </div>
+      <div class="step-item" id="step-extracting">
+        <div class="step-icon">🔍</div>
+        <span>Extrayendo código y APIs</span>
+      </div>
+      <div class="step-item" id="step-analyzing">
+        <div class="step-icon">🤖</div>
+        <span>Analizando con Gemini</span>
+      </div>
+      <div class="step-item" id="step-generating">
+        <div class="step-icon">📝</div>
+        <span>Generando Markdown</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════
+       ERROR
+  ════════════════════════════════════════════ -->
+  <section id="error-section">
+    <div class="error-card">
+      <div class="error-icon">⚠️</div>
+      <div class="error-title">El proceso no pudo completarse</div>
+      <div class="error-msg" id="error-msg"></div>
+      <button class="btn-retry" onclick="resetToInitial()">↩ Intentar con otra URL</button>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════
+       RESULT
+  ════════════════════════════════════════════ -->
+  <section id="result-section">
+    <!-- Barra superior de contexto y retorno a inicio -->
+    <div class="result-top-bar">
+      <button class="btn-top-new" onclick="resetToInitial()">
+        <span>←</span> Nueva URL / Otra librería
+      </button>
+      <div class="result-badge-indicator">
+        <span class="live-dot"></span> Conocimiento extraído
+      </div>
+    </div>
+
+    <!-- Header de la librería -->
+    <div class="result-header" id="result-header"></div>
+
+    <!-- Instalación -->
+    <div id="install-section"></div>
+
+    <!-- Conceptos & APIs -->
+    <div id="concepts-section"></div>
+
+    <!-- Casos de uso -->
+    <h2 class="section-heading">💡 Casos de uso</h2>
+    <div class="use-cases-grid" id="use-cases-container"></div>
+
+    <!-- Markdown viewer -->
+    <div class="md-section" id="md-section">
+      <h2 class="section-heading">📄 Markdown generado</h2>
+      <button class="md-toggle-btn" id="md-toggle-btn" onclick="toggleMarkdown()">
+        <span>👁️</span>
+        <span>Ver / Ocultar Markdown</span>
+        <span class="arrow" id="md-arrow">▼</span>
+      </button>
+      <div class="md-viewer" id="md-viewer"></div>
+    </div>
+
+    <!-- Acciones -->
+    <div class="actions-row">
+      <button class="btn-download" id="btn-download" onclick="downloadMarkdown()">
+        ⬇️ Descargar .md
+      </button>
+      <button class="btn-send" id="btn-send" onclick="sendToAgent()">
+        🧠 Enviar a MI-AGENTE
+      </button>
+      <button class="btn-new-url" onclick="resetToInitial()">
+        🔄 Nueva URL
+      </button>
+    </div>
+    <div class="send-status" id="send-status"></div>
+  </section>
+
+</div>
+
+<!-- Footer -->
+<footer>
+  <b>Agente-Scapper</b> · Electiva II · Extractor de Conocimiento Técnico
+  · Integrado con <b>MI-AGENTE</b> Knowledge Graph
+</footer>
+
+<!-- ════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════ -->
+<script>
+// ── Estado global ──────────────────────────────────
+const state = {
+  currentMarkdown: '',
+  currentFilename: '',
+  currentResult: null,
+  analyzing: false,
+};
+
+// ── Elementos DOM ──────────────────────────────────
+const $ = id => document.getElementById(id);
+
+// ── Pipeline SVG ──────────────────────────────────
+const NODE_CENTERS = [
+  { x: 38,  y: 100 },  // URL
+  { x: 198, y: 100 },  // Scraping
+  { x: 362, y: 100 },  // Extracción
+  { x: 525, y: 100 },  // IA
+  { x: 688, y: 100 },  // Cases
+  { x: 828, y: 100 },  // MI-AGENTE
+];
+
+const STEP_LABELS = [
+  "URL de documentación",
+  "Scraping controlado",
+  "Extracción de código y APIs",
+  "Análisis con Gemini IA",
+  "Generando casos de uso y scripts",
+  "Enviando a MI-AGENTE",
+];
+
+let animFrame = null;
+let travelerT = 0;
+let travelerSegment = 0;
+
+function activateNode(idx) {
+  for (let i = 0; i < 6; i++) {
+    const n = $(`n${i}`);
+    if (!n) continue;
+    const rect = n.querySelector('rect');
+    const texts = n.querySelectorAll('text');
+    if (i < idx) {
+      rect.setAttribute('stroke', '#ec4899');
+      rect.setAttribute('fill', 'rgba(236, 72, 153, 0.08)');
+      rect.style.filter = '';
+      texts[texts.length - 1] && (texts[0].style.filter = '');
+    } else if (i === idx) {
+      rect.setAttribute('stroke', '#f472b6');
+      rect.setAttribute('fill', 'rgba(236, 72, 153, 0.18)');
+      rect.style.filter = 'drop-shadow(0 0 10px rgba(236, 72, 153, 0.65))';
+    } else {
+      rect.setAttribute('stroke', '#202d4a');
+      rect.setAttribute('fill', '#12192c');
+      rect.style.filter = '';
+    }
+  }
+  if (idx < STEP_LABELS.length) {
+    $('graph-caption').innerHTML = `<b>${STEP_LABELS[idx]}</b>`;
+  }
+}
+
+function activateEdge(idx) {
+  for (let i = 0; i < 5; i++) {
+    const e = $(`e${i}`);
+    if (!e) continue;
+    if (i < idx) {
+      e.setAttribute('stroke', '#ec4899');
+      e.setAttribute('stroke-width', '2.5');
+      e.setAttribute('marker-end', 'url(#arrow-active)');
+    } else {
+      e.setAttribute('stroke', '#202d4a');
+      e.setAttribute('stroke-width', '2');
+      e.setAttribute('marker-end', 'url(#arrow)');
+    }
+  }
+}
+
+function animateTraveler(fromNode, toNode, onDone) {
+  cancelAnimationFrame(animFrame);
+  const traveler = $('traveler');
+  if (!traveler) return;
+  traveler.setAttribute('opacity', '1');
+  const from = NODE_CENTERS[fromNode];
+  const to   = NODE_CENTERS[toNode];
+  let t = 0;
+  const speed = 0.018;
+  function step() {
+    t += speed;
+    if (t >= 1) { t = 1; }
+    const x = from.x + (to.x - from.x) * t;
+    const y = from.y + (to.y - from.y) * t;
+    traveler.setAttribute('cx', x);
+    traveler.setAttribute('cy', y);
+    if (t < 1) {
+      animFrame = requestAnimationFrame(step);
+    } else {
+      traveler.setAttribute('opacity', '0');
+      if (onDone) onDone();
+    }
+  }
+  animFrame = requestAnimationFrame(step);
+}
+
+function resetGraph() {
+  for (let i = 0; i < 6; i++) {
+    const n = $(`n${i}`);
+    if (!n) continue;
+    const rect = n.querySelector('rect');
+    rect.setAttribute('stroke', '#202d4a');
+    rect.setAttribute('fill', '#12192c');
+    rect.style.filter = '';
+  }
+  for (let i = 0; i < 5; i++) {
+    const e = $(`e${i}`);
+    if (e) {
+      e.setAttribute('stroke', '#202d4a');
+      e.setAttribute('stroke-width', '2');
+      e.setAttribute('marker-end', 'url(#arrow)');
+    }
+  }
+  const t = $('traveler');
+  if (t) t.setAttribute('opacity', '0');
+  $('graph-caption').innerHTML = 'Introduce una URL para comenzar';
+}
+
+// ── UI State Machine (initial | processing | result | error) ──────────
+function setUIState(targetState, payload = {}) {
+  state.view = targetState;
+
+  const hero = $('hero');
+  const progress = $('progress-section');
+  const result = $('result-section');
+  const error = $('error-section');
+  const navResult = $('nav-link-result');
+
+  // Ocultar todas las vistas principales
+  hero.style.display = 'none';
+  progress.style.display = 'none';
+  result.style.display = 'none';
+  error.style.display = 'none';
+
+  if (targetState === 'initial') {
+    // ESTADO INICIAL:
+    // Mostrar solamente bienvenida, campo URL, botón Analizar y pipeline decorativo
+    hero.style.display = 'block';
+    if (navResult) navResult.style.display = 'none';
+    setNavStatus('Listo');
+    setProgress(0);
+    resetGraph();
+    state.analyzing = false;
+    $('analyze-btn').disabled = false;
+    $('btn-icon').textContent = '▶';
+    $('btn-text').textContent = 'Analizar';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else if (targetState === 'processing') {
+    // ESTADO PROCESANDO:
+    // Mostrar campo/progreso durante la extracción y análisis
+    hero.style.display = 'block';
+    progress.style.display = 'block';
+    if (navResult) navResult.style.display = 'none';
+    setNavStatus('Procesando...', '217,70,239');
+  } else if (targetState === 'result') {
+    // ESTADO DE RESULTADOS:
+    // DESAPARECEN COMPLETAMENTE: bienvenida, buscador y pipeline decorativo
+    // Mostrar únicamente el resultado generado
+    result.style.display = 'block';
+    if (navResult) navResult.style.display = 'inline-block';
+    setNavStatus('Completado ✓', '236,72,153');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else if (targetState === 'error') {
+    hero.style.display = 'block';
+    error.style.display = 'block';
+    if (payload.message) {
+      $('error-msg').textContent = payload.message;
+    }
+    setNavStatus('Error', '248,113,113');
+    $('analyze-btn').disabled = false;
+    $('btn-icon').textContent = '▶';
+    $('btn-text').textContent = 'Analizar';
+    state.analyzing = false;
+    resetGraph();
+  }
+}
+
+function setNavStatus(text, color = '') {
+  const el = $('nav-status');
+  el.textContent = text;
+  el.style.background = color ? `rgba(${color},.15)` : '';
+  el.style.borderColor = color ? `rgb(${color})` : '';
+  el.style.color = color ? `rgb(${color})` : '';
+}
+
+function setStep(stepId, state) {
+  const el = $(stepId);
+  if (!el) return;
+  el.className = 'step-item ' + state;
+  if (state === 'active') {
+    el.querySelector('.step-icon').textContent = '◌';
+  } else if (state === 'done') {
+    el.querySelector('.step-icon').textContent = '✓';
+  }
+}
+
+function setProgress(percent) {
+  $('progress-bar').style.width = percent + '%';
+}
+
+// ── Analysis Flow ─────────────────────────────────
+async function startAnalysis() {
+  const url = $('url-input').value.trim();
+  if (!url) {
+    $('url-input').focus();
+    $('url-input').style.borderColor = 'var(--danger)';
+    setTimeout(() => $('url-input').style.borderColor = '', 1500);
+    return;
+  }
+
+  if (state.analyzing) return;
+  state.analyzing = true;
+
+  // UI
+  $('analyze-btn').disabled = true;
+  $('btn-icon').textContent = '⟳';
+  $('btn-text').textContent = 'Analizando...';
+
+  // Reset steps
+  ['validating','scraping','extracting','analyzing','generating'].forEach(s => {
+    const el = $('step-' + s);
+    if (el) { el.className = 'step-item'; el.querySelector('.step-icon').textContent = '·'; }
+  });
+  setProgress(0);
+
+  // Transición a estado de procesamiento
+  setUIState('processing');
+  resetGraph();
+  activateNode(0);
+
+  // Scroll suave a progress
+  $('progress-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  try {
+    const response = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    });
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n\n');
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const data = JSON.parse(line.slice(6));
+          handleEvent(data);
+        } catch (e) { /* ignore parse errors */ }
+      }
+    }
+  } catch (e) {
+    showError('Error de conexión con el servidor. ¿Está corriendo app.py?');
+  }
+}
+
+function handleEvent(data) {
+  if (data.type === 'progress') {
+    handleProgress(data);
+  } else if (data.type === 'result') {
+    handleResult(data);
+  } else if (data.type === 'error') {
+    showError(data.message);
+  }
+}
+
+function handleProgress(data) {
+  const { step, message, percent } = data;
+  setProgress(percent || 0);
+
+  // Update step UI
+  const stepMap = {
+    validating: 'validating', validated: 'validating',
+    scraping: 'scraping', scraped: 'scraping',
+    extracting: 'extracting', extracted: 'extracting',
+    analyzing: 'analyzing', analyzed: 'analyzing',
+    generating_md: 'generating', done: 'generating',
+  };
+
+  const order = ['validating','scraping','extracting','analyzing','generating'];
+  const current = stepMap[step] || 'validating';
+  const currentIdx = order.indexOf(current);
+
+  order.forEach((s, i) => {
+    if (i < currentIdx) setStep('step-' + s, 'done');
+    else if (i === currentIdx) {
+      setStep('step-' + s, 'active');
+      // Update text if scraping
+      if (s === 'scraping' && message) {
+        const el = $('step-scraping-text');
+        if (el) el.textContent = message.length > 60 ? message.slice(0, 60) + '...' : message;
+      }
+    }
+  });
+
+  // Animate graph
+  const nodeMap = {
+    validating: 0, validated: 0,
+    scraping: 1, scraped: 1,
+    extracting: 2, extracted: 2,
+    analyzing: 3, analyzed: 3,
+    generating_md: 4, done: 4,
+  };
+  const nodeIdx = nodeMap[step] ?? 0;
+  activateNode(nodeIdx);
+  activateEdge(nodeIdx);
+
+  if (step === 'done') {
+    setProgress(100);
+    order.forEach(s => setStep('step-' + s, 'done'));
+    setNavStatus('Completado ✓', '236,72,153');
+  }
+}
+
+function handleResult(data) {
+  state.currentResult = data.result;
+  state.currentMarkdown = data.markdown;
+  state.currentFilename = data.filename;
+
+  renderResult(data.result, data.markdown, data.filename, data.stats);
+
+  // Transición al ESTADO DE RESULTADOS:
+  // Se oculta completamente el hero y el pipeline, mostrando solo el resultado generado
+  setUIState('result');
+
+  // Reset button
+  $('analyze-btn').disabled = false;
+  $('btn-icon').textContent = '▶';
+  $('btn-text').textContent = 'Analizar';
+  state.analyzing = false;
+}
+
+function showError(msg) {
+  setUIState('error', { message: msg });
+  $('error-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function resetToInitial() {
+  state.currentResult = null;
+  state.currentMarkdown = '';
+  state.currentFilename = '';
+  state.analyzing = false;
+  $('url-input').value = '';
+  setUIState('initial');
+  setTimeout(() => $('url-input').focus(), 150);
+}
+
+// ── Render Result ─────────────────────────────────
+function renderResult(result, markdown, filename, stats) {
+  const lib = result.library || {};
+  const cases = result.use_cases || [];
+
+  // Header
+  $('result-header').innerHTML = `
+    <div class="lib-name">${escHtml(lib.name || 'Librería')}</div>
+    <div class="lib-url">
+      Documentación: <a href="${escHtml($('url-input').value)}" target="_blank" rel="noopener">
+        ${escHtml($('url-input').value)}
+      </a>
+    </div>
+    <div class="lib-desc">${escHtml(lib.description || '')}</div>
+    <div class="stats-row">
+      <div class="stat-chip">📄 <b>${stats.pages_scraped}</b> páginas analizadas</div>
+      <div class="stat-chip">🔍 <b>${stats.code_snippets}</b> bloques de código</div>
+      <div class="stat-chip">💡 <b>${stats.use_cases}</b> casos de uso</div>
+    </div>
+  `;
+
+  // Instalación
+  $('install-section').innerHTML = lib.installation ? `
+    <h2 class="section-heading">📦 Instalación</h2>
+    <div class="install-block">
+      <span class="dollar">$</span>
+      <code>${escHtml(lib.installation)}</code>
+    </div>
+  ` : '';
+
+  // Conceptos & APIs
+  const concepts = (lib.concepts || []).map(c => `<span class="pill">${escHtml(c)}</span>`).join('');
+  const apis = (lib.apis || []).map(a => `<span class="api-chip">${escHtml(a)}</span>`).join(' ');
+  $('concepts-section').innerHTML = `
+    ${concepts ? `<h2 class="section-heading">🧠 Conceptos principales</h2><div class="pills">${concepts}</div>` : ''}
+    ${apis ? `<h2 class="section-heading">⚙️ APIs principales</h2><div class="pills">${apis}</div>` : ''}
+  `;
+
+  // Casos de uso
+  const container = $('use-cases-container');
+  container.innerHTML = '';
+  cases.forEach((c, i) => {
+    container.appendChild(buildCaseCard(c, i));
+  });
+
+  // Markdown viewer
+  $('md-viewer').textContent = markdown;
+
+  // Actions — filename
+  $('btn-download').setAttribute('data-filename', filename);
+}
+
+function buildCaseCard(c, idx) {
+  const div = document.createElement('div');
+  div.className = 'use-case-card';
+
+  const apisUsed = (c.apis_used || []).map(a => `<span class="api-chip">${escHtml(a)}</span>`).join(' ');
+  const deps = (c.dependencies || []).map(d => `<span class="inline-code">${escHtml(d)}</span>`).join(' ');
+  const evidence = (c.evidence || []).map(ev => `
+    <div class="evidence-item">
+      <span>→</span>
+      <a href="${escHtml(ev.source_url)}" target="_blank" rel="noopener">${escHtml(ev.source_url)}</a>
+      ${ev.api ? `<span class="ev-api">${escHtml(ev.api)}</span>` : ''}
+    </div>
+  `).join('');
+
+  const scriptId = `script-${idx}`;
+  const highlightedCode = highlightCode(c.minimal_script || '', c.language || 'python');
+
+  div.innerHTML = `
+    <div class="card-header">
+      <div class="case-number">${idx + 1}</div>
+      <div class="card-header-content">
+        <h3>${escHtml(c.title || `Caso ${idx + 1}`)}</h3>
+        <div class="objective">${escHtml(c.objective || '')}</div>
+      </div>
+    </div>
+    <div class="card-body">
+      ${c.problem ? `<div class="field-label">Problema</div><div class="field-value">${escHtml(c.problem)}</div>` : ''}
+      ${c.explanation ? `<div class="field-label">Explicación</div><div class="field-value">${escHtml(c.explanation)}</div>` : ''}
+      ${c.why_use_library ? `<div class="field-label">Por qué usar esta librería</div><div class="field-value">${escHtml(c.why_use_library)}</div>` : ''}
+      ${apisUsed ? `<div class="field-label">APIs utilizadas</div><div class="field-value">${apisUsed}</div>` : ''}
+
+      <div class="field-label">Script minimalista</div>
+      <div class="code-wrap">
+        <div class="code-header">
+          <span class="code-lang">${escHtml(c.language || 'python')}</span>
+          <button class="btn-copy" id="copy-${idx}" onclick="copyCode('${scriptId}', ${idx})">
+            📋 Copiar
+          </button>
+        </div>
+        <pre id="${scriptId}">${highlightedCode}</pre>
+      </div>
+
+      ${deps ? `<div class="field-label">Dependencias</div><div class="field-value">${deps}</div>` : ''}
+      ${c.execution ? `<div class="field-label">Ejecución</div><div class="field-value"><span class="inline-code">${escHtml(c.execution)}</span></div>` : ''}
+      ${c.expected_result ? `<div class="field-label">Resultado esperado</div><div class="field-value">${escHtml(c.expected_result)}</div>` : ''}
+      ${evidence ? `<div class="field-label">Evidencia de la documentación</div><div class="evidence-list">${evidence}</div>` : ''}
+    </div>
+  `;
+  return div;
+}
+
+// ── Syntax Highlight (básico, sin deps externas) ──
+function highlightCode(code, lang) {
+  let s = escHtml(code);
+  if (lang === 'python' || lang === 'py') {
+    s = s
+      .replace(/\b(import|from|def|class|return|if|elif|else|for|while|with|as|try|except|finally|raise|in|not|and|or|is|lambda|yield|True|False|None|async|await|pass|break|continue)\b/g, '<span class="tok-kw">$1</span>')
+      .replace(/(#[^\n]*)/g, '<span class="tok-cm">$1</span>')
+      .replace(/(&quot;[^&]*&quot;|&#x27;[^&]*&#x27;|`[^`]*`)/g, '<span class="tok-str">$1</span>')
+      .replace(/\b(\d+\.?\d*)\b/g, '<span class="tok-num">$1</span>');
+  } else if (lang === 'bash' || lang === 'sh' || lang === 'shell') {
+    s = s
+      .replace(/(#[^\n]*)/g, '<span class="tok-cm">$1</span>')
+      .replace(/\b(pip|python|echo|export|cd|ls|mkdir|curl|git)\b/g, '<span class="tok-kw">$1</span>');
+  } else if (lang === 'json') {
+    s = s
+      .replace(/(&quot;[^&]*&quot;)\s*:/g, '<span class="tok-cls">$1</span>:')
+      .replace(/:\s*(&quot;[^&]*&quot;)/g, ': <span class="tok-str">$1</span>');
+  }
+  return s;
+}
+
+// ── Copy ─────────────────────────────────────────
+async function copyCode(elementId, idx) {
+  const el = $(elementId);
+  if (!el) return;
+  // Get plain text (strip HTML tags)
+  const text = el.innerText || el.textContent;
+  try {
+    await navigator.clipboard.writeText(text);
+    const btn = $('copy-' + idx);
+    btn.textContent = '✓ Copiado';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = '📋 Copiar';
+      btn.classList.remove('copied');
+    }, 2000);
+  } catch (e) {
+    alert('No se pudo copiar. Selecciona el texto manualmente.');
+  }
+}
+
+// ── Markdown toggle ───────────────────────────────
+function toggleMarkdown() {
+  const viewer = $('md-viewer');
+  const arrow = $('md-arrow');
+  const isOpen = viewer.classList.contains('open');
+  viewer.classList.toggle('open', !isOpen);
+  arrow.textContent = isOpen ? '▼' : '▲';
+  $('md-toggle-btn').style.borderRadius = isOpen
+    ? 'var(--radius-sm)'
+    : 'var(--radius-sm) var(--radius-sm) 0 0';
+}
+
+// ── Download MD ───────────────────────────────────
+async function downloadMarkdown() {
+  if (!state.currentMarkdown) return;
+  const blob = new Blob([state.currentMarkdown], { type: 'text/markdown; charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = state.currentFilename || 'library-skill.md';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ── Send to MI-AGENTE ─────────────────────────────
+async function sendToAgent() {
+  if (!state.currentMarkdown) return;
+  const btn = $('btn-send');
+  const statusEl = $('send-status');
+  btn.disabled = true;
+  btn.textContent = '⏳ Enviando...';
+  statusEl.className = 'send-status';
+  statusEl.style.display = 'none';
+
+  try {
+    const resp = await fetch('/api/send-to-agent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        markdown_content: state.currentMarkdown,
+        filename: state.currentFilename,
+      }),
+    });
+    const data = await resp.json();
+    if (resp.ok && data.success) {
+      statusEl.textContent = data.message;
+      statusEl.className = 'send-status success';
+      btn.textContent = '✅ Enviado a MI-AGENTE';
+    } else {
+      const msg = data.detail || data.message || 'Error desconocido';
+      statusEl.textContent = '❌ ' + msg;
+      statusEl.className = 'send-status error';
+      btn.textContent = '🧠 Enviar a MI-AGENTE';
+      btn.disabled = false;
+    }
+  } catch (e) {
+    statusEl.textContent = '❌ No se pudo conectar con el servidor.';
+    statusEl.className = 'send-status error';
+    btn.textContent = '🧠 Enviar a MI-AGENTE';
+    btn.disabled = false;
+  }
+  statusEl.style.display = 'block';
+}
+
+// ── Utils ─────────────────────────────────────────
+function escHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+// ── Enter key on input ────────────────────────────
+$('url-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') startAnalysis();
+});
+
+// ── Init ──────────────────────────────────────────
+(async () => {
+  setUIState('initial');
+  try {
+    const h = await fetch('/api/health');
+    const d = await h.json();
+    if (!d.gemini_configured) {
+      setNavStatus('⚠️ Sin API Key', '248,113,113');
+    }
+    // Check MI-AGENTE
+    if (d.mi_agente && !d.mi_agente.available) {
+      $('btn-send').title = 'MI-AGENTE no encontrado: ' + (d.mi_agente.error || '');
+    }
+  } catch (e) { /* server not ready yet */ }
+})();
+</script>
+</body>
+</html>
